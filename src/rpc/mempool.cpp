@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2025 The Dwarfchain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -57,6 +58,7 @@ static RPCHelpMan sendrawtransaction()
              "Reject transactions with provably unspendable outputs (e.g. 'datacarrier' outputs that use the OP_RETURN opcode) greater than the specified value, expressed in " + CURRENCY_UNIT + ".\n"
              "If burning funds through unspendable outputs is desired, increase this value.\n"
              "This check is based on heuristics and does not guarantee spendability of outputs.\n"},
+            {"cointype", RPCArg::Type::STR, RPCArg::Default{"MITH"}, "The coin type (MITH or RING)"},
         },
         RPCResult{
             RPCResult::Type::STR_HEX, "", "The transaction hash in hex"
@@ -85,8 +87,19 @@ static RPCHelpMan sendrawtransaction()
                     throw JSONRPCTransactionError(TransactionError::MAX_BURN_EXCEEDED);
                 }
             }
-
-            CTransactionRef tx(MakeTransactionRef(std::move(mtx)));
+            CoinType coinType = CoinType::MITH;
+            if (!request.params[3].isNull()) {
+                std::string coinTypeStr = request.params[3].get_str();
+                if (coinTypeStr == "MITH") {
+                    coinType = CoinType::MITH;
+                } else if (coinTypeStr == "RING") {
+                    coinType = CoinType::RING;
+                } else {
+                    throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid coin type");
+                }
+            }
+            
+            CTransactionRef tx(MakeTransactionRef(std::move(mtx), coinType));
 
             const CFeeRate max_raw_tx_fee_rate{ParseFeeRate(self.Arg<UniValue>("maxfeerate"))};
 
