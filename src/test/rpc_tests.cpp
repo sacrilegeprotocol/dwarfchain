@@ -1,4 +1,5 @@
 // Copyright (c) 2012-2022 The Bitcoin Core developers
+// Copyright (c) 2025 The Dwarfchain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -637,6 +638,23 @@ BOOST_AUTO_TEST_CASE(rpc_arg_helper)
         };
     CheckRpc(params, UniValue{JSON(R"([5, "hello", null, null, null, null, null])")}, check_positional);
     CheckRpc(params, UniValue{JSON(R"([5, "hello", 4, "test", true, 1.23, "world"])")}, check_positional);
+}
+
+BOOST_AUTO_TEST_CASE(rpc_sendrawtransaction_with_cointype)
+{
+    UniValue r;
+    std::string rawtx = "0100000001a15d57094aa7a21a28cb20b59aab8fc7d1149a3bdbcddba9c622e4f5f6a99ece010000006c493046022100f93bb0e7d8db7bd46e40132d1f8242026e045f03a0efe71bbb8e3f475e970d790221009337cd7f1f929f00cc6ff01f03729b069a7c21b59b1736ddfee5db5946c5da8c0121033b9b137ee87d5a812d6f506efdd37f0affa7ffc310711c06c7f3e097c9447c52ffffffff0100e1f505000000001976a9140389035a9225b3839e2bbf32d826a1e222031fd888ac00000000";
+
+    // Test Mith coin type
+    BOOST_CHECK_NO_THROW(r = CallRPC(std::string("sendrawtransaction ")+rawtx+" Mith"));
+    BOOST_CHECK_EQUAL(r.get_str(), "Mith");
+
+    // Test Ring coin type
+    BOOST_CHECK_NO_THROW(r = CallRPC(std::string("sendrawtransaction ")+rawtx+" Ring"));
+    BOOST_CHECK_EQUAL(r.get_str(), "Ring");
+
+    // Test invalid coin type
+    BOOST_CHECK_THROW(CallRPC(std::string("sendrawtransaction ")+rawtx+" InvalidCoinType"), std::runtime_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
