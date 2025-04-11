@@ -1,4 +1,6 @@
 // Copyright (c) 2014-2021 The Bitcoin Core developers
+// Copyright (c) 2025 The Dwarfchain developers
+
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -358,6 +360,70 @@ BOOST_AUTO_TEST_CASE(block_malleation)
         }
         BOOST_CHECK(is_mutated(block, /*check_witness_root=*/true));
     }
+}
+
+BOOST_AUTO_TEST_CASE(cross_currency_check_transaction_test)
+{
+    // Create a transaction with Mith coin type
+    CMutableTransaction tx_mith;
+    tx_mith.nVersion = 1;
+    tx_mith.vin.resize(1);
+    tx_mith.vin[0].prevout.SetNull();
+    tx_mith.vout.resize(1);
+    tx_mith.vout[0].nValue = 50 * COIN;
+    tx_mith.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    tx_mith.coinType = CoinType::MITH;
+
+    // Create a transaction with Ring coin type
+    CMutableTransaction tx_ring;
+    tx_ring.nVersion = 1;
+    tx_ring.vin.resize(1);
+    tx_ring.vin[0].prevout.SetNull();
+    tx_ring.vout.resize(1);
+    tx_ring.vout[0].nValue = 50 * COIN;
+    tx_ring.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    tx_ring.coinType = CoinType::RING;
+
+    // Check that the transactions are valid individually
+    CValidationState state;
+    BOOST_CHECK(CheckTransaction(tx_mith, state, CoinType::MITH));
+    BOOST_CHECK(CheckTransaction(tx_ring, state, CoinType::RING));
+
+    // Check that cross-currency usage is detected
+    BOOST_CHECK(!CheckTransaction(tx_mith, state, CoinType::RING));
+    BOOST_CHECK(!CheckTransaction(tx_ring, state, CoinType::MITH));
+}
+
+BOOST_AUTO_TEST_CASE(cross_currency_accept_to_memory_pool_test)
+{
+    // Create a transaction with Mith coin type
+    CMutableTransaction tx_mith;
+    tx_mith.nVersion = 1;
+    tx_mith.vin.resize(1);
+    tx_mith.vin[0].prevout.SetNull();
+    tx_mith.vout.resize(1);
+    tx_mith.vout[0].nValue = 50 * COIN;
+    tx_mith.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    tx_mith.coinType = CoinType::MITH;
+
+    // Create a transaction with Ring coin type
+    CMutableTransaction tx_ring;
+    tx_ring.nVersion = 1;
+    tx_ring.vin.resize(1);
+    tx_ring.vin[0].prevout.SetNull();
+    tx_ring.vout.resize(1);
+    tx_ring.vout[0].nValue = 50 * COIN;
+    tx_ring.vout[0].scriptPubKey = CScript() << OP_TRUE;
+    tx_ring.coinType = CoinType::RING;
+
+    // Check that the transactions are accepted to the memory pool individually
+    CValidationState state;
+    BOOST_CHECK(AcceptToMemoryPool(m_node.mempool.get(), state, MakeTransactionRef(tx_mith), nullptr, false, CoinType::MITH));
+    BOOST_CHECK(AcceptToMemoryPool(m_node.mempool.get(), state, MakeTransactionRef(tx_ring), nullptr, false, CoinType::RING));
+
+    // Check that cross-currency usage is detected
+    BOOST_CHECK(!AcceptToMemoryPool(m_node.mempool.get(), state, MakeTransactionRef(tx_mith), nullptr, false, CoinType::RING));
+    BOOST_CHECK(!AcceptToMemoryPool(m_node.mempool.get(), state, MakeTransactionRef(tx_ring), nullptr, false, CoinType::MITH));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
