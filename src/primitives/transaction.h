@@ -25,6 +25,12 @@
 #include <utility>
 #include <vector>
 
+enum class CoinType {
+    MITH,  // Mith (MTH)
+    RING,  // Ring (RNG)
+    UNKNOWN
+};
+
 /** An outpoint - a combination of a transaction hash and an index n into its vout */
 class COutPoint
 {
