@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2025 The Dwarfchain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -307,6 +308,7 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t version;
     const uint32_t nLockTime;
+    const CoinType coinType;
 
 private:
     /** Memory only. */
@@ -321,20 +323,29 @@ private:
 
 public:
     /** Convert a CMutableTransaction into a CTransaction. */
-    explicit CTransaction(const CMutableTransaction& tx);
-    explicit CTransaction(CMutableTransaction&& tx);
+    explicit CTransaction(const CMutableTransaction& tx, CoinType coinTypeIn);
+    explicit CTransaction(CMutableTransaction&& tx, CoinType coinTypeIn);
 
     template <typename Stream>
     inline void Serialize(Stream& s) const {
         SerializeTransaction(*this, s, s.template GetParams<TransactionSerParams>());
+        s << VARINT(static_cast<uint8_t>(coinType));
     }
 
     /** This deserializing constructor is provided instead of an Unserialize method.
      *  Unserialize is not possible, since it would require overwriting const fields. */
     template <typename Stream>
-    CTransaction(deserialize_type, const TransactionSerParams& params, Stream& s) : CTransaction(CMutableTransaction(deserialize, params, s)) {}
+    CTransaction(deserialize_type, const TransactionSerParams& params, Stream& s) : CTransaction(CMutableTransaction(deserialize, params, s)) {
+        uint8_t coinTypeCode;
+        s >> VARINT(coinTypeCode);
+        coinType = static_cast<CoinType>(coinTypeCode);
+    }
     template <typename Stream>
-    CTransaction(deserialize_type, Stream& s) : CTransaction(CMutableTransaction(deserialize, s)) {}
+    CTransaction(deserialize_type, Stream& s) : CTransaction(CMutableTransaction(deserialize, s)) {
+        uint8_t coinTypeCode;
+        s >> VARINT(coinTypeCode);
+        coinType = static_cast<CoinType>(coinTypeCode);
+    }
 
     bool IsNull() const {
         return vin.empty() && vout.empty();
@@ -356,6 +367,14 @@ public:
     bool IsCoinBase() const
     {
         return (vin.size() == 1 && vin[0].prevout.IsNull());
+    }
+
+    bool IsMith() const {
+        return coinType == CoinType::MITH;
+    }
+
+    bool IsRing() const {
+        return coinType == CoinType::RING;
     }
 
     friend bool operator==(const CTransaction& a, const CTransaction& b)
@@ -380,6 +399,7 @@ struct CMutableTransaction
     std::vector<CTxOut> vout;
     uint32_t version;
     uint32_t nLockTime;
+    CoinType coinType;
 
     explicit CMutableTransaction();
     explicit CMutableTransaction(const CTransaction& tx);
@@ -387,11 +407,15 @@ struct CMutableTransaction
     template <typename Stream>
     inline void Serialize(Stream& s) const {
         SerializeTransaction(*this, s, s.template GetParams<TransactionSerParams>());
+        s << VARINT(static_cast<uint8_t>(coinType));
     }
 
     template <typename Stream>
     inline void Unserialize(Stream& s) {
         UnserializeTransaction(*this, s, s.template GetParams<TransactionSerParams>());
+        uint8_t coinTypeCode;
+        s >> VARINT(coinTypeCode);
+        coinType = static_cast<CoinType>(coinTypeCode);
     }
 
     template <typename Stream>
@@ -402,6 +426,9 @@ struct CMutableTransaction
     template <typename Stream>
     CMutableTransaction(deserialize_type, Stream& s) {
         Unserialize(s);
+        uint8_t coinTypeCode;
+        s >> VARINT(coinTypeCode);
+        coinType = static_cast<CoinType>(coinTypeCode);
     }
 
     /** Compute the hash of this CMutableTransaction. This is computed on the
