@@ -58,12 +58,20 @@ public:
         return fCoinBase;
     }
 
+    bool IsMith() const {
+        return coinType == CoinType::MITH;
+    }
+
+    bool IsRing() const {
+        return coinType == CoinType::RING;
+    }
     template<typename Stream>
     void Serialize(Stream &s) const {
         assert(!IsSpent());
         uint32_t code = nHeight * uint32_t{2} + fCoinBase;
         ::Serialize(s, VARINT(code));
         ::Serialize(s, Using<TxOutCompression>(out));
+        ::Serialize(s, VARINT(static_cast<uint8_t>(coinType)));
     }
 
     template<typename Stream>
@@ -73,6 +81,9 @@ public:
         nHeight = code >> 1;
         fCoinBase = code & 1;
         ::Unserialize(s, Using<TxOutCompression>(out));
+        uint8_t coinTypeCode;
+        ::Unserialize(s, VARINT(coinTypeCode));
+        coinType = static_cast<CoinType>(coinTypeCode);
     }
 
     /** Either this coin never existed (see e.g. coinEmpty in coins.cpp), or it
