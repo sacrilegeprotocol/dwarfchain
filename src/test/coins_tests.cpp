@@ -1,4 +1,5 @@
 // Copyright (c) 2014-2022 The Bitcoin Core developers
+// Copyright (c) 2025 The Dwarfchain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -34,7 +35,8 @@ bool operator==(const Coin &a, const Coin &b) {
     if (a.IsSpent() && b.IsSpent()) return true;
     return a.fCoinBase == b.fCoinBase &&
            a.nHeight == b.nHeight &&
-           a.out == b.out;
+           a.out == b.out &&
+           a.GetCoinType() == b.GetCoinType();
 }
 
 class CCoinsViewTest : public CCoinsView
@@ -518,7 +520,8 @@ BOOST_AUTO_TEST_CASE(ccoins_serialization)
     BOOST_CHECK_EQUAL(cc1.nHeight, 203998U);
     BOOST_CHECK_EQUAL(cc1.out.nValue, CAmount{60000000000});
     BOOST_CHECK_EQUAL(HexStr(cc1.out.scriptPubKey), HexStr(GetScriptForDestination(PKHash(uint160("816115944e077fe7c803cfa57f29b36bf87c1d35"_hex_u8)))));
-
+    BOOST_CHECK_EQUAL(cc1.GetCoinType(), CoinType::Mith); // Assuming default is Mith
+   
     // Good example
     DataStream ss2{"8ddf77bbd123008c988f1a4a4de2161e0f50aac7f17e7f9555caa4"_hex};
     Coin cc2;
@@ -527,7 +530,8 @@ BOOST_AUTO_TEST_CASE(ccoins_serialization)
     BOOST_CHECK_EQUAL(cc2.nHeight, 120891U);
     BOOST_CHECK_EQUAL(cc2.out.nValue, 110397);
     BOOST_CHECK_EQUAL(HexStr(cc2.out.scriptPubKey), HexStr(GetScriptForDestination(PKHash(uint160("8c988f1a4a4de2161e0f50aac7f17e7f9555caa4"_hex_u8)))));
-
+    BOOST_CHECK_EQUAL(cc1.GetCoinType(), CoinType::Mith); // Assuming default is Mith
+    
     // Smallest possible example
     DataStream ss3{"000006"_hex};
     Coin cc3;
@@ -536,7 +540,8 @@ BOOST_AUTO_TEST_CASE(ccoins_serialization)
     BOOST_CHECK_EQUAL(cc3.nHeight, 0U);
     BOOST_CHECK_EQUAL(cc3.out.nValue, 0);
     BOOST_CHECK_EQUAL(cc3.out.scriptPubKey.size(), 0U);
-
+    BOOST_CHECK_EQUAL(cc1.GetCoinType(), CoinType::Mith); // Assuming default is Mith
+   
     // scriptPubKey that ends beyond the end of the stream
     DataStream ss4{"000007"_hex};
     try {
@@ -737,6 +742,7 @@ static void CheckAddCoin(const CAmount base_value, const MaybeCoin& cache_coin, 
     SingleEntryCacheTest test{base_value, cache_coin};
     bool possible_overwrite{coinbase};
     auto add_coin{[&] { test.cache.AddCoin(OUTPOINT, Coin{CTxOut{modify_value, CScript{}}, 1, coinbase}, possible_overwrite); }};
+    auto add_coin{[&] { test.cache.AddCoin(OUTPOINT, Coin(CTxOut{modify_value, CScript{}}, 1, coinbase), possible_overwrite); }};
     if (auto* expected_coin{std::get_if<MaybeCoin>(&expected)}) {
         add_coin();
         test.cache.SelfTest();
