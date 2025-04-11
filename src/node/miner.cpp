@@ -1,5 +1,7 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2025 The Dwarfchain developers
+
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -23,6 +25,7 @@
 #include <util/moneystr.h>
 #include <util/time.h>
 #include <validation.h>
+#include <argon2.h>
 
 #include <algorithm>
 #include <utility>
@@ -173,6 +176,12 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock()
     pblock->nBits          = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
     pblock->nNonce         = 0;
 
+    // Use Argon2iD algorithm for mining
+    uint8_t hash[32];
+    uint8_t salt[16] = {0};
+    argon2id_hash_raw(4000, 1024 * 1024, 1, pblock, sizeof(CBlock), salt, sizeof(salt), hash, sizeof(hash));
+    memcpy(&pblock->nNonce, hash, sizeof(pblock->nNonce));
+    
     BlockValidationState state;
     if (m_options.test_block_validity && !TestBlockValidity(state, chainparams, m_chainstate, *pblock, pindexPrev,
                                                             /*fCheckPOW=*/false, /*fCheckMerkleRoot=*/false)) {
