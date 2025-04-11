@@ -1,4 +1,5 @@
 // Copyright (c) 2017-2022 The Bitcoin Core developers
+// Copyright (c) 2025 The Dwarfchain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -54,5 +55,7 @@ void AddOutputs(CMutableTransaction& rawTx, const UniValue& outputs_in);
 
 /** Create a transaction from univalue parameters */
 CMutableTransaction ConstructTransaction(const UniValue& inputs_in, const UniValue& outputs_in, const UniValue& locktime, std::optional<bool> rbf);
+/** Decode a hex-encoded transaction */
+CMutableTransaction DecodeHexTx(const std::string& hex_tx, CoinType coinType);
 
 #endif // BITCOIN_RPC_RAWTRANSACTION_UTIL_H
