@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-present The Bitcoin Core developers
+// Copyright (c) 2025  The Dwarfchain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -250,21 +251,21 @@ struct PackageMempoolAcceptResult
 };
 
 /**
- * Try to add a transaction to the mempool. This is an internal function and is exposed only for testing.
- * Client code should use ChainstateManager::ProcessTransaction()
- *
- * @param[in]  active_chainstate  Reference to the active chainstate.
- * @param[in]  tx                 The transaction to submit for mempool acceptance.
- * @param[in]  accept_time        The timestamp for adding the transaction to the mempool.
- *                                It is also used to determine when the entry expires.
- * @param[in]  bypass_limits      When true, don't enforce mempool fee and capacity limits,
- *                                and set entry_sequence to zero.
- * @param[in]  test_accept        When true, run validation checks but don't submit to mempool.
- *
- * @returns a MempoolAcceptResult indicating whether the transaction was accepted/rejected with reason.
- */
+* Try to add a transaction to the mempool. This is an internal function and is exposed only for testing.
+* Client code should use ChainstateManager::ProcessTransaction()
+*
+* @param[in]  active_chainstate  Reference to the active chainstate.
+* @param[in]  tx                 The transaction to submit for mempool acceptance.
+* @param[in]  accept_time        The timestamp for adding the transaction to the mempool.
+*                                It is also used to determine when the entry expires.
+* @param[in]  bypass_limits      When true, don't enforce mempool fee and capacity limits,
+*                                and set entry_sequence to zero.
+* @param[in]  test_accept        When true, run validation checks but don't submit to mempool.
+* @param[in]  coinType           The type of coin (Mith or Ring) for the transaction.
+* @returns a MempoolAcceptResult indicating whether the transaction was accepted/rejected with reason.
+*/
 MempoolAcceptResult AcceptToMemoryPool(Chainstate& active_chainstate, const CTransactionRef& tx,
-                                       int64_t accept_time, bool bypass_limits, bool test_accept)
+                                       int64_t accept_time, bool bypass_limits, bool test_accept, CoinType coinType)
     EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
 /**
@@ -1249,8 +1250,9 @@ public:
      *
      * @param[in]  tx              The transaction to submit for mempool acceptance.
      * @param[in]  test_accept     When true, run validation checks but don't submit to mempool.
+     * @param[in]  coinType        The type of coin (Mith or Ring) for the transaction.
      */
-    [[nodiscard]] MempoolAcceptResult ProcessTransaction(const CTransactionRef& tx, bool test_accept=false)
+    [[nodiscard]] MempoolAcceptResult ProcessTransaction(const CTransactionRef& tx, bool test_accept=false, CoinType coinType=CoinType::MITH)
         EXCLUSIVE_LOCKS_REQUIRED(cs_main);
 
     //! Load the block tree and coins database from disk, initializing state if we're running with -reindex
