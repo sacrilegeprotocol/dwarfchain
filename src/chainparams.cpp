@@ -1,13 +1,13 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2022 The Bitcoin Core developers
-// Copyright (c) 2025 The Dwarfchain Core developers
+// Copyright (c) 2025 The Dwarfchain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <chainparams.h>
-
 #include <chainparamsbase.h>
 #include <common/args.h>
+#include <consensus/merkle.h> // Required for CreateGenesisBlock
 #include <consensus/params.h>
 #include <deploymentinfo.h>
 #include <logging.h>
@@ -15,7 +15,6 @@
 #include <util/chaintype.h>
 #include <util/strencodings.h>
 #include <util/string.h>
-
 #include <cassert>
 #include <cstdint>
 #include <limits>
@@ -101,18 +100,42 @@ void ReadRegTestArgs(const ArgsManager& args, CChainParams::RegTestOptions& opti
     }
 }
 
-static std::unique_ptr<const CChainParams> globalChainParams;
+// Implementation of Dwarfchain parameters
+std::unique_ptr<const CChainParams> CChainParams::Dwarfchain() {
+    auto params = std::make_unique<CChainParams>();
+    params->strNetworkID = "dwarfchain";
+    params->consensus.nSubsidyHalvingInterval = 420000; // Mith halves every 420,000 blocks
+    params->consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+    params->consensus.nPowTargetTimespan = 24 * 60 * 60; // 1 day (for ASERT)
+    params->consensus.nPowTargetSpacing = 5 * 60; // 5 minutes
+    params->consensus.nMaturity = 100; // 100 block maturity
+    params->consensus.fPowAllowMinDifficultyBlocks = false;
+    params->consensus.nMinerConfirmationWindow = 288; // 1 day = 288 blocks
 
-const CChainParams &Params() {
-    assert(globalChainParams);
-    return *globalChainParams;
+    // Address prefixes and black hole address
+    params->bech32_hrp = "mthq";  // Mith prefix
+    params->bech32m_hrp = "rngp"; // Ring prefix
+    params->ringBlackHoleAddress = "rng1pxxxxxxxxxxxxxxxxxx8gf2tvdw0s3jn54khce6mua7lyk9p3z";
+
+    // Genesis block (to be regenerated later)
+    params->genesis = CreateGenesisBlock(1231006505, 2084524493, 0x1d00ffff, 1, 128 * COIN); // Initial 128 Mith
+    params->consensus.hashGenesisBlock = params->genesis.GetHash();
+    // assert(params->consensus.hashGenesisBlock == uint256S("expected_hash")); // To be generated
+    // assert(params->genesis.hashMerkleRoot == uint256S("expected_merkle_root")); // To be generated
+
+    params->nDefaultPort = 8333; // Default port (customizable)
+    params->vSeeds.emplace_back("seed.dwarfchain.org"); // Example seed node
+
+    return params;
 }
+
+static std::unique_ptr<const CChainParams> globalChainParams;
 
 std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, const ChainType chain)
 {
     switch (chain) {
     case ChainType::MAIN:
-        return CChainParams::Main();
+        return CChainParams::Dwarfchain(); // Replace Bitcoin mainnet with dwarfchain
     case ChainType::TESTNET:
         return CChainParams::TestNet();
     case ChainType::TESTNET4:
@@ -129,6 +152,11 @@ std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, c
     }
     }
     assert(false);
+}
+
+const CChainParams &Params() {
+    assert(globalChainParams);
+    return *globalChainParams;
 }
 
 void SelectParams(const ChainType chain)
