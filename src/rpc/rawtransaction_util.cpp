@@ -1,5 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2025 The Dwarfchain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -333,4 +334,27 @@ void SignTransactionResultToJSON(CMutableTransaction& mtx, bool complete, const 
         }
         result.pushKV("errors", std::move(vErrors));
     }
+}
+
+CMutableTransaction DecodeHexTx(const std::string& hex_tx, CoinType coinType)
+{
+    CMutableTransaction mtx;
+    if (!IsHex(hex_tx)) {
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed: invalid format, not hex");
+    }
+
+    std::vector<unsigned char> txData(ParseHex(hex_tx));
+    if (txData.empty()) {
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "TX decode failed: empty hex string");
+    }
+
+    try {
+        CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
+        ssData >> mtx;
+        mtx.coinType = coinType;
+    } catch (const std::exception& e) {
+        throw JSONRPCError(RPC_DESERIALIZATION_ERROR, strprintf("TX decode failed: %s", e.what()));
+    }
+
+    return mtx;
 }
