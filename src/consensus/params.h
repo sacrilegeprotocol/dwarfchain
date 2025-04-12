@@ -1,5 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2022 The Bitcoin Core developers
+// Copyright (c) 2025 The Dwarfchain developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -149,6 +150,20 @@ struct Params {
         } // no default case, so the compiler can warn about missing cases
         return std::numeric_limits<int>::max();
     }
+
+    // Mith block reward rules
+    int64_t nInitialBlockReward;
+    int64_t nBlockRewardHalvingInterval;
+    int64_t nFinalBlockReward;
+
+    // Argon2iD algorithm parameters
+    uint32_t nArgon2iDMemory;
+    uint32_t nArgon2iDParallelism;
+    uint32_t nArgon2iDIterations;
+
+    // ASERT mechanism parameters
+    int64_t nASERTTargetBlockTime;
+    int64_t nASERTHalfLife;
 };
 
 } // namespace Consensus
