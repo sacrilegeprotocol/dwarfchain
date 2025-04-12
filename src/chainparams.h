@@ -61,4 +61,23 @@ const CChainParams &Params();
  */
 void SelectParams(const ChainType chain);
 
+class CChainParams {
+public:
+    // Existing members...
+
+    // Mith block reward rules
+    int64_t nInitialBlockReward;
+    int64_t nBlockRewardHalvingInterval;
+    int64_t nMinimumBlockReward;
+
+    // Argon2iD algorithm parameters
+    uint32_t nArgon2iDTimeCost;
+    uint32_t nArgon2iDMemoryCost;
+    uint32_t nArgon2iDParallelism;
+
+    // ASERT mechanism parameters
+    int64_t nASERTTargetBlockTime;
+    int64_t nASERTHalfLife;
+};
+
 #endif // BITCOIN_CHAINPARAMS_H
