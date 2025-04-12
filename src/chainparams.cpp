@@ -55,14 +55,14 @@ void ReadRegTestArgs(const ArgsManager& args, CChainParams::RegTestOptions& opti
         const auto value{arg.substr(found + 1)};
         int32_t height;
         if (!ParseInt32(value, &height) || height < 0 || height >= std::numeric_limits<int>::max()) {
-            throw std::runtime_error(strprintf("Invalid height value (%s) for -testactivationheight=name@height.", arg));
+            throw std::runtime_error(strprintf("Invalid height value (%s) for -testactivationheight=name@height.",value ));
         }
 
         const auto deployment_name{arg.substr(0, found)};
         if (const auto buried_deployment = GetBuriedDeployment(deployment_name)) {
             options.activation_heights[*buried_deployment] = height;
         } else {
-            throw std::runtime_error(strprintf("Invalid name (%s) for -testactivationheight=name@height.", arg));
+            throw std::runtime_error(strprintf("Invalid name (%s) for -testactivationheight=name@height.", deployment_name));
         }
     }
 
@@ -163,4 +163,21 @@ void SelectParams(const ChainType chain)
 {
     SelectBaseParams(chain);
     globalChainParams = CreateChainParams(gArgs, chain);
+}
+
+CChainParams::CChainParams()
+{
+    // Set the new parameters for the Mith block reward rules
+    consensus.nInitialBlockReward = 128 * COIN;
+    consensus.nBlockRewardHalvingInterval = 420000;
+    consensus.nFinalBlockReward = 16 * COIN;
+
+    // Set the new parameters for the Argon2iD algorithm
+    consensus.nArgon2iDMemory = 1024 * 1024; // 1GB
+    consensus.nArgon2iDParallelism = 1;
+    consensus.nArgon2iDIterations = 4000;
+
+    // Set the new parameters for the ASERT mechanism
+    consensus.nASERTTargetBlockTime = 5 * 60; // 5 minutes
+    consensus.nASERTHalfLife = 288 * 60 * 60; // 1 day
 }
